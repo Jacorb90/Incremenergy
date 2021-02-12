@@ -1,0 +1,215 @@
+* {
+	font-family: Verdana, sans-serif;
+	text-align: center;
+	transition-duration: 0.2s;
+}
+
+body {
+	background-color: black;
+	color: white;
+	text-shadow: 0px 0px 7px white;
+	overflow-x: hidden;
+}
+
+table, tr, .table {
+    display: flex;
+    justify-content: center;
+}
+
+table {
+	flex-flow: column wrap;
+}
+
+tr, .tableRow {
+    flex-flow: row wrap;
+}
+
+.reallybigtxt {
+	font-size: 80px;
+	font-weight: bold;
+	font-family: Tahoma;
+}
+
+.bigtxt {
+	font-size: 30px;
+	font-weight: bold;
+	font-family: Tahoma;
+}
+
+.slightlyBigText {
+	font-size: 20px;
+	font-weight: bold;
+	font-family: Tahoma;
+}
+
+.smalltxt {
+	font-size: 11px;
+	font-family: Tahoma;
+}
+
+button {
+	border: solid 3px black;
+	border-radius: 25%;
+	background-color: white;
+    font-size: 14px;
+	cursor: default;
+	width: 100px;
+	height: 100px;
+}
+
+button.small {
+	width: 75px;
+	height: 50px;
+}
+
+button.big {
+	width: 150px;
+	height: 150px;
+}
+
+button.reallyBig {
+	width: 200px;
+	height: 200px;
+}
+
+.autoDiv {
+	width: 200px;
+	height: 200px;
+	border: 1px solid white;
+	border-radius: 15%;
+}
+
+.locked {
+	background-color: #820000;
+	color: white;
+	cursor: not-allowed;
+}
+
+.unlocked {
+	background-color: #607564;
+	color: white;
+	cursor: pointer;
+}
+
+.unlocked:hover {
+	background-color: #74b080;
+}
+
+.bought {
+	background-color: #13f23d;
+	color: black;
+	cursor: default;
+}
+
+.skill {
+	width: 200px;
+	height: 200px;
+	border-radius: 50%;
+	margin-left: 40px;
+	margin-right: 40px;
+}
+
+.skill:not(.locked):hover {
+	filter: brightness(120%);
+	cursor: pointer;
+}
+
+.skill1:not(.locked) {
+	background-color: #4f869e;
+}
+
+.skill2:not(.locked) {
+	background-color: #5F6A9C;
+}
+
+.skill3:not(.locked) {
+	background-color: #6f4d99;
+}
+
+.skilltableitem {
+	min-width: 240px;
+	max-width: 240px;
+}
+
+.options {
+	background-color: #b0b0b0;
+	color: black;
+}
+
+.options:hover {
+	background-color: white;
+}
+
+.optionsAuto {
+	background-color: #4d4d4d;
+}
+
+.main {
+	background-color: white;
+	color: black;
+}
+
+.main:hover {
+	background-color: white;
+	color: #b0b0b0;
+}
+
+.mainAuto {
+	background-color: black;
+}
+
+.auto {
+	background-color: #d5e2e3;
+	color: black;
+}
+
+.auto:hover {
+	background-color: #f0fffd;
+	color: #b0b0b0;
+}
+
+.autoAuto {
+	background-color: #3e4242;
+}
+
+.super {
+	background-color: #e6dc8a;
+	color: black;
+}
+
+.super:hover {
+	background-color: #fff8bd;
+	color: #b0b0b0;
+}
+
+.superAuto {
+	background-color: #4d492e;
+}
+
+.mega {
+	background-color: #211596;
+	color: white;
+}
+
+.mega:hover {
+	background-color: #5b4ddb;
+	color: #b0b0b0;
+}
+
+.megaAuto {
+	background-color: #140c61;
+}
+
+.skills {
+	background: linear-gradient(#4f869e, #6f4d99);
+	color: white;
+}
+
+.skills:hover {
+	filter: brightness(120%);
+	color: #b0b0b0;
+}
+
+.skillsAuto {
+	background: linear-gradient(#0a4e5c, #390b61);
+}

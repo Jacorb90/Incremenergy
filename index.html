@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<head>
+	<title>&#128498; Incremenergy &#128498;</title>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script src="js/break_eternity.js"></script>
+	<script src="js/playerControl.js"></script>
+	<script src="js/format.js"></script>
+	<script src="js/temp.js"></script>
+	<script src="js/game.js"></script>
+	<script src="js/v.js"></script>
+	<script src="js/achievements.js"></script>
+
+	<script src="js/energy.js"></script>
+	<script src="js/super.js"></script>
+	<script src="js/auto.js"></script>
+	<script src="js/mega.js"></script>
+	<script src="js/skills.js"></script>
+</head>
+<body onload="loadGame()">
+	<div id="app">
+		{{getUnlockText()}} ({{format(getUnlockProgress()*100)}}%)<br><br>
+		You have <span class="bigtxt">{{format(player.energy)}}</span> Energy<sup>{{format(tmp.en.exp)}}</sup><br>
+		<span v-if="tmp.en.divPerSec.gt(1)" class="smalltxt">Due to Energy Overflow, your Energy is being divided by {{format(tmp.en.divPerSec)}} every second.</span><br><br>
+		<table>
+			<tr>
+				<td v-for="t in allTabs"><button v-if="tabUnlocks[t]()" v-bind:class="{small: true, unlocked: true, [t.toLowerCase()]: true}" v-on:click="tab = t">{{t}}</button></td>
+			</tr>
+		</table>
+		<br><br>
+		<div v-if="tab=='Options'">
+			<table>
+				<tr>
+					<td><button class="unlocked options" onclick="toggleAutosave()">Autosave: {{player.autosave?"ON":"OFF"}}</button></td>
+					<td><button class="small unlocked options" onclick="save()">Save</button><br>
+					<button class="small unlocked options" onclick="importSave()">Import</button></td>
+					<td><button class="small unlocked" style="background-color: #820000;" onclick="hardReset()">HARD RESET</button><br>
+					<button class="small unlocked options" onclick="exportSave()">Export</button></td>
+				</tr>
+			</table>
+		</div>
+		<div v-if="tab=='Auto'">
+			You have <span class="slightlyBigText" style="color: #e6dc8a;">{{format(player.sup.energy)}}</span> Super-Energy<sup>{{format(tmp.sup.exp)}}</sup><br><br>
+			<subtab-display :tabname="'Auto'"></subtab-display>
+			<table>
+				<tr v-for="(a,c) in auto_data.map">
+					<td v-for="(a2,x) in auto_data.map[c]"><div v-bind:class="{autoDiv: true, [auto_data[x].tab.toLowerCase()+'Auto']: true}" v-if="tmp.auto[x].unl&&subtabs.Auto==auto_data[x].tab"><h5>{{auto_data[x].title}}<br><button v-if="!player.autoUnls.includes(x)" v-bind:class="{locked: player.sup.energy.lt(auto_data[x].cost), unlocked: player.sup.energy.gte(auto_data[x].cost)}" v-on:click="unlockAuto(x)">Cost: {{formatWhole(auto_data[x].cost)}} Super-Energy</button><br><input v-if="player.autoUnls.includes(x)" type="checkbox" v-model="player.autos[x]"></h5></div></td>
+				</tr>
+			</table>
+		</div>
+		<div v-if="tab=='Main'">
+			<table>
+				<tr v-for="(a,c) in energyUpgs.cols">
+					<td v-for="x in energyUpgs.cols[c]"><button v-if="((x>1)?(tmp.en.upgs[x-1].lvl.gt(0)||player.unlocks.includes('Super')):true)&&energyUpgs[x].unl()" v-on:click="buyEnergyUpg(x)" v-bind:class="{locked: player.energy.lt(tmp.en.upgs[x].cost), unlocked: player.energy.gte(tmp.en.upgs[x].cost), big: true, smalltxt: true}"><h4>{{energyUpgs[x].title}}</h4>{{energyUpgs[x].display()}}<br>Level: {{formatWhole(player.upgs[x])}} <span v-if="tmp.en.upgs[x].extra.gt(0)"> + {{format(tmp.en.upgs[x].extra)}}</span><br>Currently: <b>{{energyUpgs[x].displayEff()}}</b><br><br>Cost: {{format(tmp.en.upgs[x].cost)}} Energy</button></td>
+				</tr>
+			</table>
+		</div>
+		<div v-if="tab=='Super'">
+			You have <span class="slightlyBigText" style="color: #e6dc8a;">{{format(player.sup.energy)}}</span> Super-Energy<sup>{{format(tmp.sup.exp)}}</sup>, which adds <b>{{format(tmp.sup.enEff)}}</b> levels to the first 3 Energy Upgrades.<br>
+			<span style="font-size: 11px">You have supercharged your Energy {{formatWhole(player.sup.times)}} times.</span><br>
+			<span v-if="tmp.sup.divPerSec.gt(1)" class="smalltxt">Due to Super-Energy Overflow, your Super-Energy is being divided by {{format(tmp.sup.divPerSec)}} every second.</span><br><br>
+			<button v-bind:class="{locked: !tmp.sup.can, unlocked: tmp.sup.can, super: tmp.sup.can, reallyBig: true}" onclick="superReset()">Supercharge your Energy to gain {{formatWhole(tmp.sup.gain)}} base Super-Energy, and to increase the Super-Energy exponent by {{format(tmp.sup.expInc)}}.<span v-if="!tmp.sup.can"><br><br>Req: Energy exponent of {{formatWhole(12)}}</span></button><br><br>
+			<table>
+				<tr v-for="(a,c) in superUpgs.cols">
+					<td v-for="x in superUpgs.cols[c]"><button v-if="((x>1)?((tmp.sup.upgs[x-1].lvl.gt(0)||player.unlocks.includes('Mega'))&&player.unlocks.includes('Auto')):true)&&superUpgs[x].unl()" v-on:click="buySuperUpg(x)" v-bind:class="{locked: player.sup.energy.lt(tmp.sup.upgs[x].cost), unlocked: player.sup.energy.gte(tmp.sup.upgs[x].cost), super: player.sup.energy.gt(tmp.sup.upgs[x].cost), big: true, smalltxt: true}"><h4>{{superUpgs[x].title}}</h4>{{superUpgs[x].display()}}<br>Level: {{formatWhole(player.sup.upgs[x])}} <span v-if="tmp.sup.upgs[x].extra.gt(0)"> + {{format(tmp.sup.upgs[x].extra)}}</span><br>Currently: <b>{{superUpgs[x].displayEff()}}</b><br><br>Cost: {{format(tmp.sup.upgs[x].cost)}} Super-Energy</button></td>
+				</tr>
+			</table>
+		</div>
+		<div v-if="tab=='Mega'">
+			You have <span class="slightlyBigText" style="color: #211596;">{{format(player.mega.energy)}}</span> Mega-Energy<sup>{{format(tmp.mega.exp)}}</sup>, which adds <b>{{format(tmp.mega.enEff)}}</b> to the Energy & Super-Energy exponents.<br>
+			You have <b>{{formatWhole(player.mega.factories)}}</b> Mega Factories, which increase the Mega-Energy exponent by <b>{{format(tmp.mega.factoryEff)}}</b>.<br><br>
+			<subtab-display :tabname="'Mega'"></subtab-display><br><br>
+			<div v-if="subtabs.Mega=='Main'">
+				<button v-bind:class="{locked: !tmp.mega.can, unlocked: tmp.mega.can, mega: tmp.mega.can, reallyBig: true}" onclick="megaReset()">Sacrifice all previous progress to build a Mega Factory.<span v-if="!tmp.mega.can"><br><br>Req: Energy exponent of {{formatWhole(tmp.mega.req)}}</span></button><br><br>
+				<table>
+					<tr v-for="(a,c) in megaUpgs.cols">
+						<td v-for="x in megaUpgs.cols[c]"><button v-if="megaUpgs[x].unl()" v-on:click="buyMegaUpg(x)" v-bind:class="{locked: (player.mega.energy.lt(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), unlocked: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), mega: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), bought: player.mega.upgrades.includes(x), big: true, smalltxt: true}"><h4>{{megaUpgs[x].title}}</h4>{{megaUpgs[x].display}}<br><span v-if="megaUpgs[x].displayEff">Currently: <b><span v-html="megaUpgs[x].displayEff()"></span></b><br></span><br><span v-if="!player.mega.upgrades.includes(x)">Cost: {{format(megaUpgs[x].cost)}} Mega-Energy</span></button></td>
+					</tr>
+				</table>
+			</div><div v-if="subtabs.Mega=='Skills'">
+				<table>
+					<tr>
+						<td v-for="(i,x) in skill_data" class="skilltableitem">+{{formatWhole(tmp.skills[x].xpGain)}} XP (next at {{format(nextXP(x))}} {{skill_data[x].basedOn}})<br></td>
+					</tr><tr>
+						<td v-for="(i,x) in skill_data" class="skilltableitem"><button v-bind:class="{reallybigtxt: true, skill: true, ['skill'+x]: true, locked: tmp.skills[x].xpGain.lt(1), unlocked: tmp.skills[x].xpGain.gte(1)}" v-on:click="upgradeSkill(x)" v-html="skill_data[x].symbol"></button><br></td>
+					</tr><tr>
+						<td v-for="(i,x) in skill_data" class="skilltableitem">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Level: {{formatWhole(tmp.skills[x].lvl)}} (Next: {{formatWhole(tmp.skills[x].next)}} more XP)<br><br></td>
+					</tr><tr>
+						<td v-for="(i,x) in skill_data" class="skilltableitem">{{skill_data[x].desc()}}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
