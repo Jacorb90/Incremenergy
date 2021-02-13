@@ -43,6 +43,9 @@ function loadVue() {
 			skill_data,
 			upgradeSkill,
 			nextXP,
+			hyperUpgs,
+			buyHyperUpg,
+			fortune_req,
         }
 	})
 }

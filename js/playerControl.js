@@ -19,6 +19,20 @@ function getStartPlayer() {
 			upgrades: [],
 			xp: {},
 		},
+		hyper: {
+			splitAtoms: new Decimal(0),
+			power: new Decimal(0),
+			energy: new Decimal(1),
+			times: new Decimal(0),
+			upgs: {},
+		},
+		fortune: {
+			active: false,
+			furthest: new Decimal(0),
+			energy: new Decimal(1),
+			gifts: new Decimal(0),
+			karma: new Decimal(0),
+		},
 	};
 	return p;
 }
@@ -49,4 +63,12 @@ function transformPlayerToDecimal() {
 	player.mega.factories = new Decimal(player.mega.factories)
 	player.mega.energy = new Decimal(player.mega.energy)
 	for (let id in player.mega.xp) player.mega.xp[id] = new Decimal(player.mega.xp[id])
+	player.hyper.splitAtoms = new Decimal(player.hyper.splitAtoms)
+	player.hyper.power = new Decimal(player.hyper.power)
+	player.hyper.energy = new Decimal(player.hyper.energy)
+	for (let id in player.hyper.upgs) player.hyper.upgs[id] = new Decimal(player.hyper.upgs[id])
+	player.fortune.furthest = new Decimal(player.fortune.furthest)
+	player.fortune.energy = new Decimal(player.fortune.energy);
+	player.fortune.gifts = new Decimal(player.fortune.gifts);
+	player.fortune.karma = new Decimal(player.fortune.karma);
 }

@@ -4,32 +4,41 @@ var tab = "Main";
 var subtabs = {
 	Auto: "Main",
 	Mega: "Main",
+	Hyper: "Main",
 };
 var intervals = {};
 var version = 0.1;
 var gameID = "exponentGoUpYay"
-var allTabs = ["Options", "Main", "Auto", "Super", "Mega", "Hyper", "Ultra"] // shhhhhhhhhh, you're seeing spoilers...
+var allTabs = ["Options", "Info", "Main", "Auto", "Super", "Mega", "Hyper", "Ultra"] // shhhhhhhhhh, you're seeing spoilers...
 var tabUnlocks = {
 	Options() { return true },
+	Info() { return true },
 	Main() { return true },
 	Auto() { return player.unlocks.includes("Auto") },
 	Super() { return player.unlocks.includes("Super") },
 	Mega() { return player.unlocks.includes("Mega") },
-	Hyper() { return false },
+	Hyper() { return player.unlocks.includes("Hyper") },
 	Ultra() { return false },
 }
 var allSubtabs = {
-	Auto: ["Main", "Super"],
+	Auto: ["Main", "Super", "Mega", "Fortune"],
 	Mega: ["Main", "Skills"],
+	Hyper: ["Main", "Fortune"],
 };
 var subtabUnlocks = {
 	Auto: {
 		Main() { return true },
-		Super() { return player.sup.times.gt(0)||player.mega.factories.gt(0) },
+		Super() { return player.sup.times.gt(0)||player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
+		Mega() { return player.hyper.times.gt(0) },
+		Fortune() { return player.unlocks.includes("Fortune") },
 	},
 	Mega: {
 		Main() { return true },
 		Skills() { return player.unlocks.includes("Skills") },
+	},
+	Hyper: {
+		Main() { return true },
+		Fortune() { return player.unlocks.includes("Fortune") },
 	},
 }
 
@@ -96,7 +105,9 @@ function getUnlockText() {
 	else if (!player.unlocks.includes("Auto")) return "Next Feature: Requires "+formatWhole(50)+" Super-Energy."
 	else if (!player.unlocks.includes("Mega")) return "Next Feature: Requires an Energy exponent of "+formatWhole(4e3)+"."
 	else if (!player.unlocks.includes("Skills")) return "Next Feature: Requires "+formatWhole(10)+" Mega Factories."
-	else if (!player.unlocks.includes("Hyper")) return "End of game: Requires an Energy exponent of "+formatWhole(6e8)+"."
+	else if (!player.unlocks.includes("Hyper")) return "Next Feature: Requires an Energy exponent of "+formatWhole(6e8)+"."
+	else if (!player.unlocks.includes("Fortune")) return "Next Feature: Requires an Energy exponent of "+formatWhole(5e12)+"."
+	else if (!player.unlocks.includes("Constellations")) return "End of game: Requires "+format("1e1000")+" Mega-Energy."
 	else return "You have reached the end!"
 }
 
@@ -106,6 +117,8 @@ function getUnlockProgress() {
 	else if (!player.unlocks.includes("Mega")) return tmp.en.exp.eq(0)?0:Decimal.div(tmp.en.exp, 4e3).min(1).toNumber()
 	else if (!player.unlocks.includes("Skills")) return player.mega.factories.div(10).min(1).toNumber()
 	else if (!player.unlocks.includes("Hyper")) return tmp.en.exp.eq(0)?0:Decimal.div(tmp.en.exp, 6e8).min(1).toNumber()
+	else if (!player.unlocks.includes("Fortune")) return tmp.en.exp.eq(0)?0:Decimal.div(tmp.en.exp, 5e12).min(1).toNumber()
+	else if (!player.unlocks.includes("Constellations")) return player.mega.energy.max(1).log("1e1000").toNumber()
 	else return 1
 }
 
@@ -115,6 +128,8 @@ function updateUnlocks() {
 	if (tmp.en.exp.gte(4e3) && !player.unlocks.includes("Mega")) player.unlocks.push("Mega")
 	if (player.mega.factories.gte(10) && !player.unlocks.includes("Skills")) player.unlocks.push("Skills")
 	if (tmp.en.exp.gte(6e8) && !player.unlocks.includes("Hyper")) player.unlocks.push("Hyper")
+	if (tmp.en.exp.gte(5e12) && !player.unlocks.includes("Fortune")) player.unlocks.push("Fortune")
+	if (player.mega.energy.gte("1e1000") && !player.unlocks.includes("Constellations")) player.unlocks.push("Constellations")
 }
 
 function gameLoop(diff) {
@@ -124,5 +139,6 @@ function gameLoop(diff) {
 	doEnergyTick(diff);
 	doSuperTick(diff);
 	doMegaTick(diff);
+	doHyperTick(diff);
 	automate(diff);
 }

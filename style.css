@@ -144,6 +144,19 @@ button.reallyBig {
 	background-color: #4d4d4d;
 }
 
+.info {
+	background-color: #8cb8b0;
+	color: black;
+}
+
+.info:hover {
+	background-color: #b9ede4;
+}
+
+.infoAuto {
+	background-color: #5a7570;
+}
+
 .main {
 	background-color: white;
 	color: black;
@@ -212,4 +225,36 @@ button.reallyBig {
 
 .skillsAuto {
 	background: linear-gradient(#0a4e5c, #390b61);
+}
+
+.hyper {
+	background: radial-gradient(#966117, #9c9c17);
+	color: white;
+}
+
+.hyper:hover {
+	filter: brightness(120%);
+	color: #b0b0b0;
+}
+
+.hyperAuto {
+	background-color: #5c450b;
+}
+
+.hyperBox {
+	box-shadow: 0 0 40px 40px rgba(56, 36, 9, 0.5);
+}
+
+.fortune {
+	background: radial-gradient(#964876, #c3b4d6);
+	color: white;
+}
+
+.fortune:hover {
+	filter: brightness(120%);
+	color: #b0b0b0;
+}
+
+.fortuneAuto {
+	background: radial-gradient(#612d4b, #625a6b);
 }

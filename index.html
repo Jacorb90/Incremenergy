@@ -11,13 +11,14 @@
 	<script src="js/temp.js"></script>
 	<script src="js/game.js"></script>
 	<script src="js/v.js"></script>
-	<script src="js/achievements.js"></script>
 
 	<script src="js/energy.js"></script>
 	<script src="js/super.js"></script>
 	<script src="js/auto.js"></script>
 	<script src="js/mega.js"></script>
 	<script src="js/skills.js"></script>
+	<script src="js/hyper.js"></script>
+	<script src="js/fortune.js"></script>
 </head>
 <body onload="loadGame()">
 	<div id="app">
@@ -41,6 +42,10 @@
 				</tr>
 			</table>
 		</div>
+		<div v-if="tab=='Info'">
+			The Energy mechanic works like this: You generate 1 Base Energy/sec, then it's raised to the power of the exponent shown.<br><br>
+			<span v-if="player.unlocks.includes('Fortune')">Positive Karma = Higher chance of getting more Gifts. Negative Karma = Higher chance of getting less Gifts.</span>
+		</div>
 		<div v-if="tab=='Auto'">
 			You have <span class="slightlyBigText" style="color: #e6dc8a;">{{format(player.sup.energy)}}</span> Super-Energy<sup>{{format(tmp.sup.exp)}}</sup><br><br>
 			<subtab-display :tabname="'Auto'"></subtab-display>
@@ -60,7 +65,6 @@
 		<div v-if="tab=='Super'">
 			You have <span class="slightlyBigText" style="color: #e6dc8a;">{{format(player.sup.energy)}}</span> Super-Energy<sup>{{format(tmp.sup.exp)}}</sup>, which adds <b>{{format(tmp.sup.enEff)}}</b> levels to the first 3 Energy Upgrades.<br>
 			<span style="font-size: 11px">You have supercharged your Energy {{formatWhole(player.sup.times)}} times.</span><br>
-			<span v-if="tmp.sup.divPerSec.gt(1)" class="smalltxt">Due to Super-Energy Overflow, your Super-Energy is being divided by {{format(tmp.sup.divPerSec)}} every second.</span><br><br>
 			<button v-bind:class="{locked: !tmp.sup.can, unlocked: tmp.sup.can, super: tmp.sup.can, reallyBig: true}" onclick="superReset()">Supercharge your Energy to gain {{formatWhole(tmp.sup.gain)}} base Super-Energy, and to increase the Super-Energy exponent by {{format(tmp.sup.expInc)}}.<span v-if="!tmp.sup.can"><br><br>Req: Energy exponent of {{formatWhole(12)}}</span></button><br><br>
 			<table>
 				<tr v-for="(a,c) in superUpgs.cols">
@@ -69,14 +73,14 @@
 			</table>
 		</div>
 		<div v-if="tab=='Mega'">
-			You have <span class="slightlyBigText" style="color: #211596;">{{format(player.mega.energy)}}</span> Mega-Energy<sup>{{format(tmp.mega.exp)}}</sup>, which adds <b>{{format(tmp.mega.enEff)}}</b> to the Energy & Super-Energy exponents.<br>
+			You have <span class="slightlyBigText" style="color: #786cf5; text-shadow: 0px 0px 7px rgba(255, 255, 255, 0.8);">{{format(player.mega.energy)}}</span> Mega-Energy<sup>{{format(tmp.mega.exp)}}</sup>, which adds <b>{{format(tmp.mega.enEff)}}</b> to the Energy & Super-Energy exponents.<br>
 			You have <b>{{formatWhole(player.mega.factories)}}</b> Mega Factories, which increase the Mega-Energy exponent by <b>{{format(tmp.mega.factoryEff)}}</b>.<br><br>
 			<subtab-display :tabname="'Mega'"></subtab-display><br><br>
 			<div v-if="subtabs.Mega=='Main'">
 				<button v-bind:class="{locked: !tmp.mega.can, unlocked: tmp.mega.can, mega: tmp.mega.can, reallyBig: true}" onclick="megaReset()">Sacrifice all previous progress to build a Mega Factory.<span v-if="!tmp.mega.can"><br><br>Req: Energy exponent of {{formatWhole(tmp.mega.req)}}</span></button><br><br>
 				<table>
 					<tr v-for="(a,c) in megaUpgs.cols">
-						<td v-for="x in megaUpgs.cols[c]"><button v-if="megaUpgs[x].unl()" v-on:click="buyMegaUpg(x)" v-bind:class="{locked: (player.mega.energy.lt(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), unlocked: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), mega: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), bought: player.mega.upgrades.includes(x), big: true, smalltxt: true}"><h4>{{megaUpgs[x].title}}</h4>{{megaUpgs[x].display}}<br><span v-if="megaUpgs[x].displayEff">Currently: <b><span v-html="megaUpgs[x].displayEff()"></span></b><br></span><br><span v-if="!player.mega.upgrades.includes(x)">Cost: {{format(megaUpgs[x].cost)}} Mega-Energy</span></button></td>
+						<td v-for="x in megaUpgs.cols[c]"><button v-if="megaUpgs[x].unl()||player.mega.upgrades.includes(x)" v-on:click="buyMegaUpg(x)" v-bind:class="{locked: (player.mega.energy.lt(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), unlocked: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), mega: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), bought: player.mega.upgrades.includes(x), big: true, smalltxt: true}"><h4>{{megaUpgs[x].title}}</h4>{{megaUpgs[x].display}}<br><span v-if="megaUpgs[x].displayEff">Currently: <b><span v-html="megaUpgs[x].displayEff()"></span></b><br></span><br><span v-if="!player.mega.upgrades.includes(x)">Cost: {{format(megaUpgs[x].cost)}} Mega-Energy</span></button></td>
 					</tr>
 				</table>
 			</div><div v-if="subtabs.Mega=='Skills'">
@@ -91,6 +95,30 @@
 						<td v-for="(i,x) in skill_data" class="skilltableitem">{{skill_data[x].desc()}}</td>
 					</tr>
 				</table>
+			</div>
+		</div>
+		<div v-if="tab=='Hyper'">
+			You have <span class="slightlyBigText" style="color: #f29c24;">{{format(player.hyper.energy)}}</span> Hyper-Energy<sup>{{format(tmp.hyper.exp)}}</sup>, which makes Energy Overflow <b>{{format(tmp.hyper.enEff.times(100))}}%</b> weaker, and adds <b>{{format(tmp.hyper.enEff2)}}</b> to all previous Energy exponents.<br>
+			You have split <b>{{formatWhole(player.hyper.splitAtoms)}}</b> atoms, which adds <b>{{format(tmp.hyper.powerToExp)}}</b> to the Hyper-Energy exponent.<br>
+			<span style="font-size: 11px">You have put all your energies into the Hypertube {{formatWhole(player.hyper.times)}} times.</span><br><br>
+			<subtab-display :tabname="'Hyper'"></subtab-display><br><br>
+			<div v-if="subtabs.Hyper=='Main'">
+				<button v-bind:class="{locked: !tmp.hyper.can, unlocked: tmp.hyper.can, hyper: tmp.hyper.can, reallyBig: true, hyperBox: true}" onclick="hyperReset()">Put all your Energies into the Hypertube to split {{formatWhole(tmp.hyper.gain)}} atoms.<span v-if="!tmp.hyper.can"><br><br>Req: Energy exponent of {{formatWhole(6e8)}}</span></button><br><br>
+				<span v-if="player.hyper.times.gt(0)">
+					<span style="font-size: 12px; color: #f29c24;">WARNING: Each Hyper Upgrade level decreases the Hyper-Energy exponent by {{format(tmp.hyper.upgDecExp)}}. (Currently: -{{format(tmp.hyper.totalUpgs.times(tmp.hyper.upgDecExp))}})</span><br>
+					<button v-bind:class="{locked: tmp.hyper.totalUpgs.lt(1), unlocked: tmp.hyper.totalUpgs.gte(1), hyper: tmp.hyper.totalUpgs.gte(1)}" onclick="resetHyperUpgs()">Reset Hyper Upgrades</button><br><br>
+					<table>
+						<tr v-for="(a,c) in hyperUpgs.cols">
+							<td v-for="x in hyperUpgs.cols[c]"><button v-if="((x>1)?((tmp.hyper.upgs[x-1].lvl.gt(0))&&player.unlocks.includes('Auto')):true)&&hyperUpgs[x].unl()" v-on:click="buyHyperUpg(x)" v-bind:class="{locked: player.hyper.energy.lt(tmp.hyper.upgs[x].cost), unlocked: player.hyper.energy.gte(tmp.hyper.upgs[x].cost), hyper: player.hyper.energy.gt(tmp.hyper.upgs[x].cost), big: true, smalltxt: true, hyperBox: true}"><h4>{{hyperUpgs[x].title}}</h4>{{hyperUpgs[x].display()}}<br>Level: {{formatWhole(player.hyper.upgs[x])}} <span v-if="tmp.hyper.upgs[x].extra.gt(0)"> + {{format(tmp.hyper.upgs[x].extra)}}</span><br>Currently: <b>{{hyperUpgs[x].displayEff()}}</b><br><br>Cost: {{format(tmp.hyper.upgs[x].cost)}} Hyper-Energy</button></td>
+						</tr>
+					</table><br><br>
+				</span>
+			</div><div v-if="subtabs.Hyper=='Fortune'">
+				You have <span class="slightlyBigText" style="color: #c3b4d6;">{{format(player.fortune.energy)}}</span> Fortune Energy<sup>{{format(tmp.fortune.exp)}}</sup><br>
+				Your best Energy exponent in an Unfortunate run is <b>{{format(player.fortune.furthest)}}</b>, which adds <b>{{format(tmp.fortune.furthestToExp)}}</b> to the Fortune Energy exponent.<br><br>
+				<button v-bind:class="{unlocked: true, fortune: true, reallyBig: true, hyperBox: true}" onclick="startUnfortuneRun()">{{(player.fortune.active)?"Exit this Unfortunate run.":"Start an Unfortunate run, which square roots all Energy exponents."}}</button><br><br>
+				You have <b>{{formatWhole(player.fortune.gifts)}}</b> Gifts, which multiply the Fortune Energy exponent by <b>{{format(tmp.fortune.eff1)}}</b> and reduce the Mega Energy effect softcap's power by <b>{{format(tmp.fortune.eff2.times(100))}}%</b>.<br><br><b>Karma: {{format(player.fortune.karma.plus(tmp.fortune.addKarma).times(100))}}%</b><br>
+				<button v-bind:class="{locked: player.fortune.energy.lt(fortune_req), unlocked: player.fortune.energy.gte(fortune_req), fortune: player.fortune.energy.gte(fortune_req), big: true, hyperBox: true}" onclick="giftRNG()">{{(player.mega.upgrades.includes(19))?"Destroy 1 Fortune Energy":"Destroy all your Fortune Energy"}} to get{{(player.fortune.energy.gte(fortune_req)?(" "+formatWhole(tmp.fortune.minGain)+"-"+formatWhole(tmp.fortune.maxGain)):"")}} gifts!<span v-if="player.fortune.energy.lt(fortune_req)"><br>Req: {{formatWhole(fortune_req)}} Fortune Energy.</span></button>
 			</div>
 		</div>
 	</div>

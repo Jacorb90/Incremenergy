@@ -10,6 +10,13 @@ function toPlaces(x, precision, maxAccepted) {
 function exponentialFormat(num, precision) {
 	let e = num.log10().floor()
 	let m = num.div(Decimal.pow(10, e))
+	if (m.gte(10)) {
+		m = m.div(10);
+		e = e.plus(1);
+	} else if (m.gte(9.999999999)) {
+		m = new Decimal(1)
+		e = e.plus(1);
+	}
 	return toPlaces(m, precision, 10)+"e"+formatWhole(e)
 }
 

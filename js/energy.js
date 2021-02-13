@@ -94,7 +94,7 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[4].eff) },
 		extra() { return new Decimal(0) },
-		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0) },
+		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
 	5: {
 		title: "Super Drives",
@@ -119,7 +119,7 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[5].eff) },
 		extra() { return new Decimal(0) },
-		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0) },
+		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
 	6: {
 		title: "Archaic Processors",
@@ -139,7 +139,7 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[6].eff.sub(1).times(100))+"%" },
 		extra() { return new Decimal(0) },
-		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0) },
+		unl() { return player.sup.times.gt(0)||player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
 	7: {
 		title: "True Souls",
@@ -155,7 +155,7 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[7].eff) },
 		extra() { return new Decimal(0) },
-		unl() { return player.mega.factories.gt(0) },
+		unl() { return player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
 	8: {
 		title: "Holy Destroyers",
@@ -175,7 +175,7 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[8].eff) },
 		extra() { return new Decimal(0) },
-		unl() { return player.mega.factories.gt(0) },
+		unl() { return player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
 	9: {
 		title: "Voltaic Conductors",
@@ -191,8 +191,12 @@ var energyUpgs = {
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.en.upgs[9].eff) },
 		extra() { return new Decimal(0) },
-		unl() { return player.mega.factories.gt(0) },
+		unl() { return player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
 	},
+}
+
+function getGlobalEnergyUpgPower() {
+	return new Decimal(1);
 }
 
 function getEnergyExp() {
@@ -202,29 +206,63 @@ function getEnergyExp() {
 	exp = exp.plus(tmp.en.upgs[2].eff)
 	if (tmp.mega) exp = exp.plus(tmp.mega.enEff);
 	if (player.mega.upgrades.includes(11) && tmp.mega) exp = exp.plus(tmp.mega.upgs[11].eff.normal)
+	if (tmp.hyper) exp = exp.plus(tmp.hyper.enEff2)
 	
 	exp = exp.times(tmp.en.upgs[3].eff)
-	return exp;
+	return fortuneNerf(exp);
 }
 
-function scaledEnergyUpgs(n) {
-	if (n.gte(80)) n = n.pow(2).div(80)
-	if (n.gte(500)) n = n.pow(3).div(25e4)
-	if (n.gte(2e3)) n = Decimal.pow(2e3, n.log(2e3).pow(2))
+function getEnergyUpgScalingPower(x, y) {
+	let power = new Decimal(1)
+	if (player.mega.upgrades.includes(16) && tmp.skills && x==2 && (y==1||y==3)) power = Decimal.sub(1, tmp.skills[1].eff)
+	if (player.mega.upgrades.includes(18) && y==1 && x!=2) power = new Decimal(.8);
+	return power;
+}
+
+function scaledEnergyUpgs(n, x) {
+	if (n.gte(80)) {
+		let p = getEnergyUpgScalingPower(x, 1).max(.28)
+		n = n.pow(p.times(2)).div(Decimal.pow(80, p.times(2).sub(1)))
+	}
+	if (n.gte(500)) {
+		let p = getEnergyUpgScalingPower(x, 2).max(.28)
+		n = n.pow(p.times(3)).div(Decimal.pow(500, p.times(3).sub(1)))
+	}
+	if (n.gte(2e3)) {
+		let p = getEnergyUpgScalingPower(x, 3).max(.28)
+		n = Decimal.pow(2e3, n.log(2e3).pow(p.times(2)))
+	}
+	if (n.gte(1.75e5)) {
+		let p = getEnergyUpgScalingPower(x, 4)
+		n = Decimal.pow(p.times(4).plus(1), n.div(1.75e5).sub(1).max(0)).times(1.75e5)
+	}
 	return n;
 }
 
-function revScaledEnergyUpgs(n) {
-	if (n.gte(2e3)) n = Decimal.pow(2e3, n.log(2e3).sqrt());
-	if (n.gte(500)) n = n.times(25e4).cbrt()
-	if (n.gte(80)) n = n.times(80).sqrt()
+function revScaledEnergyUpgs(n, x) {
+	if (n.gte(1.75e5)) {
+		let p = getEnergyUpgScalingPower(x, 4)
+		n = n.div(1.75e5).log(p.times(4).plus(1)).plus(1).times(1.75e5)
+	}
+	if (n.gte(2e3)) {
+		let p = getEnergyUpgScalingPower(x, 3).max(.28)
+		n = Decimal.pow(2e3, n.log(2e3).root(p.times(2)))
+	}
+	if (n.gte(500)) {
+		let p = getEnergyUpgScalingPower(x, 2).max(.28)
+		n = n.times(Decimal.pow(500, p.times(3).sub(1))).root(p.times(3))
+	}
+	if (n.gte(80)) {
+		let p = getEnergyUpgScalingPower(x, 1).max(.28)
+		n = n.times(Decimal.pow(80, p.times(2).sub(1))).root(p.times(2))
+	}
 	return n;
 }
 
 function buyEnergyUpg(x) {
-	if (player.energy.lt(energyUpgs[x].cost(scaledEnergyUpgs(player.upgs[x]||new Decimal(0))))) return;
+	if (player.energy.lt(energyUpgs[x].cost(scaledEnergyUpgs(player.upgs[x]||new Decimal(0), x)))) return;
 	if (player.mega.upgrades.includes(3)) {
-		let target = revScaledEnergyUpgs(energyUpgs[x].target(player.energy).sub(1)).plus(1);
+		let target = revScaledEnergyUpgs(energyUpgs[x].target(player.energy).sub(1), x).plus(1);
 		player.upgs[x] = Decimal.max(player.upgs[x]||0, target);
 	} else {
 		player.energy = player.energy.sub(tmp.en.upgs[x].cost).max(0)
@@ -233,8 +271,10 @@ function buyEnergyUpg(x) {
 }
 
 function doEnergyTick(diff) {
-	player.energy = player.energy.root(tmp.en.exp).plus(tmp.en.gain.times(diff)).pow(tmp.en.exp)
-	if (tmp.en.divPerSec.gt(1)) player.energy = player.energy.div(tmp.en.divPerSec.pow(diff));
+	if (tmp.en.divPerSec.gt(1)) {
+		player.energy = player.energy.root(tmp.en.exp).plus(tmp.en.gain.times(diff)).pow(tmp.en.exp)
+		player.energy = player.energy.div(tmp.en.divPerSec.pow(diff));
+	} else player.energy = player.energy.root(tmp.en.exp).plus(tmp.en.gain.times(diff)).pow(tmp.en.exp)
 }
 
 function getEnergyOverflowStart() {
@@ -247,17 +287,28 @@ function getEnergyOverflowScaleData() {
 	let data = {
 		1: {
 			start: new Decimal("1e250000"),
-			power: new Decimal(1),
-			impl(x, s) { return Decimal.pow(10, x.log10().pow(s.power.plus(1)).div(s.start.log10().pow(s.power))) },
+			impl(x, s, p) { return Decimal.pow(10, x.log10().pow(p.plus(1)).div(s.start.log10().pow(p))) },
 		},
 	}
 	return data;
 }
 
-function getEnergyOverflowDiv() {
-	let e = player.energy;
+function getEnergyOverflowPower() {
+	let power = new Decimal(1);
+	if (tmp.hyper) power = power.sub(tmp.hyper.enEff)
+	return power;
+}
+
+function getEnergyOverflowDiv(e=player.energy) {
 	if (e.lt(tmp.en.overflowStart)) return new Decimal(1);
-	for (let s in tmp.en.overflowScaling) if (e.gte(tmp.en.overflowScaling[s].start)) e = tmp.en.overflowScaling[s].impl(e, tmp.en.overflowScaling[s])
-	let div = e.div(tmp.en.overflowStart).max(1).root(10)
+	let p = getEnergyOverflowPower();
+	for (let s in tmp.en.overflowScaling) if (e.gte(tmp.en.overflowScaling[s].start)) e = tmp.en.overflowScaling[s].impl(e, tmp.en.overflowScaling[s], p)
+	let div = e.div(tmp.en.overflowStart).max(1).root(Decimal.div(10, p))
 	return div;
+}
+
+function getGlobalEnergyLevels() {
+	let lvl = new Decimal(0);
+	if (tmp.hyper) lvl = lvl.plus(tmp.hyper.upgs[3].eff)
+	return lvl
 }
