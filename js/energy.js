@@ -113,6 +113,7 @@ var energyUpgs = {
 			let per = player.sup.energy.max(1).log10().plus(1).log10().times(10)
 			if (per.gte(3) && !player.mega.upgrades.includes(12)) per = per.times(3).sqrt();
 			if (per.gte(5) && !player.mega.upgrades.includes(12)) per = Decimal.pow(5, per.log(5).sqrt());
+			if (ultraChoice(5, 1) && tmp.const) per = per.times(tmp.const.exp.max(1));
 			return per;
 		},
 		eff(x) { return tmp.en.upgs[5].gainPer.times(x) },
@@ -172,7 +173,7 @@ var energyUpgs = {
 			return per;
 		},
 		eff(x) { return tmp.en.upgs[8].gainPer.times(x) },
-		power() { return new Decimal(1) },
+		power() { return new Decimal(ultraChoice(7, 1)?10:1) },
 		displayEff() { return "+"+format(tmp.en.upgs[8].eff) },
 		extra() { return new Decimal(0) },
 		unl() { return player.mega.factories.gt(0)||player.unlocks.includes("Hyper") },
@@ -196,7 +197,9 @@ var energyUpgs = {
 }
 
 function getGlobalEnergyUpgPower() {
-	return new Decimal(1);
+	let power = new Decimal(1);
+	if (ultraChoice(8, 1)) power = power.times(1.59);
+	return power;
 }
 
 function getEnergyExp() {
@@ -207,8 +210,11 @@ function getEnergyExp() {
 	if (tmp.mega) exp = exp.plus(tmp.mega.enEff);
 	if (player.mega.upgrades.includes(11) && tmp.mega) exp = exp.plus(tmp.mega.upgs[11].eff.normal)
 	if (tmp.hyper) exp = exp.plus(tmp.hyper.enEff2)
+	if (tmp.ultra) exp = exp.plus(tmp.ultra.enEff2)
 	
 	exp = exp.times(tmp.en.upgs[3].eff)
+	if (player.mega.upgrades.includes(26)) exp = exp.times(1.2);
+	if (tmp.ultra) exp = exp.times(tmp.ultra.enEff);
 	return fortuneNerf(exp);
 }
 
@@ -289,6 +295,10 @@ function getEnergyOverflowScaleData() {
 			start: new Decimal("1e250000"),
 			impl(x, s, p) { return Decimal.pow(10, x.log10().pow(p.plus(1)).div(s.start.log10().pow(p))) },
 		},
+		2: {
+			start: new Decimal("e3.2e14"),
+			impl(x, s, p) { return Decimal.pow(10, x.log10().pow(p.times(1e4).plus(1)).div(s.start.log10().pow(p.times(1e4)))) },
+		},
 	}
 	return data;
 }
@@ -301,7 +311,7 @@ function getEnergyOverflowPower() {
 
 function getEnergyOverflowDiv(e=player.energy) {
 	if (e.lt(tmp.en.overflowStart)) return new Decimal(1);
-	let p = getEnergyOverflowPower();
+	let p = tmp.en.overflowPower;
 	for (let s in tmp.en.overflowScaling) if (e.gte(tmp.en.overflowScaling[s].start)) e = tmp.en.overflowScaling[s].impl(e, tmp.en.overflowScaling[s], p)
 	let div = e.div(tmp.en.overflowStart).max(1).root(Decimal.div(10, p))
 	return div;

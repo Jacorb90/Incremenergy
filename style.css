@@ -16,7 +16,7 @@ table, tr, .table {
     justify-content: center;
 }
 
-table {
+table, .table {
 	flex-flow: column wrap;
 }
 
@@ -79,6 +79,15 @@ button.reallyBig {
 	border-radius: 15%;
 }
 
+.goalDiv {
+	width: 175px;
+	height: 175px;
+	border: 1px solid white;
+	border-radius: 4%;
+	color: black;
+	cursor: default;
+}
+
 .locked {
 	background-color: #820000;
 	color: white;
@@ -93,6 +102,13 @@ button.reallyBig {
 
 .unlocked:hover {
 	background-color: #74b080;
+}
+
+.mini {
+	font-size: 10px;
+	height: 40px;
+	border-radius: 0px;
+	border: 2px solid white;
 }
 
 .bought {
@@ -144,17 +160,14 @@ button.reallyBig {
 	background-color: #4d4d4d;
 }
 
-.info {
-	background-color: #8cb8b0;
+.goals {
+	background-color: #1de2be;
 	color: black;
+	border: 1px solid white;
 }
 
-.info:hover {
-	background-color: #b9ede4;
-}
-
-.infoAuto {
-	background-color: #5a7570;
+.goals:hover {
+	background-color: #75f7e1;
 }
 
 .main {
@@ -257,4 +270,92 @@ button.reallyBig {
 
 .fortuneAuto {
 	background: radial-gradient(#612d4b, #625a6b);
+}
+
+.constellations {
+	background: radial-gradient(#706d40, #646464, #5b4ddb, #000000);
+	color: white;
+	min-width: 120px;
+	border-radius: 50%;
+}
+
+.constellations:hover {
+	filter: brightness(120%);
+	color: #b0b0b0;
+}
+
+.star {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: radial-gradient(#d6d3b9 0%, #6d6b5e 20%, #000000 70%);
+	transition-duration: 0.9s;
+}
+
+.star:hover, .star:focus, .starfocus {
+	cursor: pointer;
+	transform: scale(180%);
+	filter: brightness(150%);
+	outline: 0;
+}
+
+.redGiant {
+	width: 60px;
+	height: 60px;
+	background: radial-gradient(#dd7272 0%, #755555 40%, #000000 70%);
+	filter: brightness(90%);
+}
+
+.neutronStar {
+	width: 30px;
+	height: 30px;
+	background: radial-gradient(#d1eaeb 0%, #687677 15%, #000000 70%);
+	filter: brightness(110%);
+}
+
+.blackHole {
+	background: radial-gradient(#1e002c 0%, #8800ad 20%, #000000 70%);
+}
+
+.footer {
+	position: sticky;
+	border-top: 5px solid white;
+}
+
+.ultra {
+	background: linear-gradient(45deg, rgb(56, 10, 141), #7d1796, #7c136e, #7a0b0b);
+	color: white;
+	border: 1px solid #222222;
+}
+
+.ultra:hover {
+	filter: brightness(120%);
+	color: #b0b0b0;
+}
+
+.ultraAuto {
+	background-color: #5c450b;
+}
+
+.ultraChoice {
+	width: 300px;
+	background: linear-gradient(45deg, rgb(56, 10, 141), #7d1796, #7c136e, #7a0b0b);
+	color: white;
+	border: 2px solid white;
+	border-radius: 0;
+	cursor: pointer;
+}
+
+.ultraChoice:not(.locked):hover {
+	filter: brightness(120%);
+}
+
+.ultraChoice.locked {
+	background: #820000;
+	cursor: not-allowed;
+}
+
+.ultraChoice.selected {
+	background: linear-gradient(45deg, rgb(117, 141, 10),rgb(19, 124, 89), #7c136e, #0b6d7a);
+	filter: brightness(150%);
 }

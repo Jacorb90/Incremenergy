@@ -44,7 +44,17 @@ var auto_data = {
 		},
 		
 		9: {
+			atomGain: true,
+			hyperUpgs: true,
+			hyperStat: true,
+		},
+		10: {
 			gifts: true,
+			unfortunate: true,
+			darknessGain: true,
+		},
+		11: {
+			neutronStars: true,
 		},
 	},
 	upg1: {
@@ -158,44 +168,80 @@ var auto_data = {
 	super7: {
 		title: "Automated Subatomic Generators",
 		tab: "Super",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e2500"),
 	},
 	super8: {
 		title: "Automated Hyper Plants",
 		tab: "Super",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e6000"),
 	},
 	super9: {
 		title: "Automated Skilled Ninja",
 		tab: "Super",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e10000"),
 	},
 	factories: {
 		title: "Automated Mega Factories",
 		tab: "Mega",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e2250"),
 	},
 	skillXP: {
 		title: "Automated Skill XP Gain",
 		tab: "Mega",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e3000"),
 	},
 	megaUpgs: {
 		title: "Automated Mega Upgrades",
 		tab: "Mega",
-		unl() { return player.hyper.times.gt(0) },
+		unl() { return player.hyper.times.gt(0)||player.unlocks.includes("Ultra") },
 		cost: new Decimal("1e5000"),
+	},
+	atomGain: {
+		title: "100% of Atom Gain/sec",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e160000"),
+	},
+	hyperUpgs: {
+		title: "Automated Hyper Upgrades",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e240000"),
+	},
+	hyperStat: {
+		title: "1 reset of Hyper resets/sec",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e320000"),
 	},
 	gifts: {
 		title: "20 Gift clicks/sec",
-		tab: "Fortune",
+		tab: "Hyper",
 		unl() { return player.unlocks.includes("Fortune") },
 		cost: new Decimal("1e20000"),
+	},
+	unfortunate: {
+		title: "Best Energy Exponent in Unfortunate Run is always gained",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e400000"),
+	},
+	darknessGain: {
+		title: "100% of Darkness Gain/sec",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e500000"),
+	},
+	neutronStars: {
+		title: "Auto-Select Neutron Stars",
+		tab: "Hyper",
+		unl() { return player.unlocks.includes("Ultra") },
+		cost: new Decimal("1e600000"),
 	},
 }
 
@@ -217,15 +263,23 @@ function automate(diff) {
 		let next;
 		if (len==0) next = 1;
 		else if (len==1) {
-			if (player.mega.upgrades.includes(15)) next = 1;
+			if (player.mega.upgrades.includes(15)||player.mega.upgrades.includes(27)) next = 1;
 			else next = player.mega.upgrades[0]+1
 		} else {
-			if (player.mega.upgrades.includes(15)) next = Object.keys(megaUpgs.upgs).map(x => Number(x)).filter(x => !player.mega.upgrades.includes(x)).sort(function(a, b) {return a-b})[0]
+			if (player.mega.upgrades.includes(15)||player.mega.upgrades.includes(27)) next = Object.keys(megaUpgs.upgs).map(x => Number(x)).filter(x => !player.mega.upgrades.includes(x)).sort(function(a, b) {return a-b})[0]
 			else next = player.mega.upgrades.sort(function(a, b) {return b-a})[0]+1
 		}
 		if (next<=Object.keys(megaUpgs.upgs).length) buyMegaUpg(next)
 	}
 	if (tmp.auto.skillXP.active) for (let i=1;i<=3;i++) upgradeSkill(i, true);
 	if (tmp.auto.factories.active && tmp.mega.can) megaReset(false, false, true);
-	if (tmp.auto.gifts.active && player.fortune.energy.gte(fortune_req)) giftRNG();
+	if (tmp.auto.atomGain.active) player.hyper.splitAtoms = player.hyper.splitAtoms.plus(tmp.hyper.gain.times(diff));
+	if (tmp.auto.hyperUpgs.active) for (let i=1;i<=9;i++) buyHyperUpg(i);
+	if (tmp.auto.hyperStat.active) player.hyper.times = player.hyper.times.plus(Decimal.mul(getHyperResetGain(), diff));
+	if (tmp.auto.gifts.active && player.fortune.energy.gte(fortune_req)) giftRNG(true);
+	if (tmp.auto.unfortunate.active) player.fortune.furthest = player.fortune.furthest.max(tmp.en.exp);
+	if (tmp.auto.darknessGain.active) player.constellations.darkness = player.constellations.darkness.plus(player.constellations.energy.div(2).times(diff));
+	if (tmp.auto.neutronStars.active) {
+		for (let i=0;i<Object.values(player.constellations.stars).length;i++) player.constellations.stars[Object.keys(player.constellations.stars)[i]].type = 2;
+	}
 }

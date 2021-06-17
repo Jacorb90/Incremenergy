@@ -6,12 +6,15 @@ function updateTemp() {
 	updateSkillsTemp();
 	updateHyperTemp();
 	updateFortuneTemp();
+	updateConstellationsTemp();
+	updateUltraTemp();
 }
 
 function updateEnergyTemp() {
 	if (!tmp.en) tmp.en = {}
 	tmp.en.gain = new Decimal(1);
 	tmp.en.exp = getEnergyExp();
+	tmp.en.overflowPower = getEnergyOverflowPower()
 	tmp.en.overflowStart = getEnergyOverflowStart()
 	tmp.en.overflowScaling = getEnergyOverflowScaleData()
 	tmp.en.divPerSec = getEnergyOverflowDiv()
@@ -84,12 +87,13 @@ function updateSkillsTemp() {
 	if (!tmp.skills) tmp.skills = {}
 	tmp.skills.extraXP = getExtraXP();
 	tmp.skills.divCosts = divSkillCosts();
+	tmp.skills.reqScaling = skillReqScaling();
 	tmp.skills.globalPow = getGlobalSkillPower();
 	for (let i in skill_data) {
 		if (!tmp.skills[i]) tmp.skills[i] = {};
 		tmp.skills[i].xpGain = getXPGain(i);
-		tmp.skills[i].lvl = skill_data[i].levels(Decimal.add(player.mega.xp[i]||0, tmp.skills.extraXP));
-		tmp.skills[i].next = skill_data[i].req(tmp.skills[i].lvl.plus(1)).sub(player.mega.xp[i]||0).sub(tmp.skills.extraXP);
+		tmp.skills[i].lvl = skill_data[i].levels(Decimal.add(player.mega.xp[i]||0, tmp.skills.extraXP)).div(tmp.skills.reqScaling).floor();
+		tmp.skills[i].next = skill_data[i].req(tmp.skills[i].lvl.times(tmp.skills.reqScaling).plus(1)).sub(player.mega.xp[i]||0).sub(tmp.skills.extraXP);
 		tmp.skills[i].eff = skill_data[i].eff(tmp.skills.globalPow);
 	}
 }
@@ -126,7 +130,28 @@ function updateFortuneTemp() {
 	tmp.fortune.eff2 = Decimal.sub(1, Decimal.div(1, player.fortune.gifts.plus(1).log(5).plus(1).sqrt()))
 	tmp.fortune.giftGainMult = giftGainMult();
 	tmp.fortune.minGain = fortuneGainSoftcap(player.fortune.energy).max(1).root(1.1).times(tmp.fortune.giftGainMult)
-	tmp.fortune.maxGain = fortuneGainSoftcap(player.fortune.energy).max(1).plus(1).pow(1.1).times(tmp.fortune.giftGainMult)
+	tmp.fortune.maxGain = fortuneGainSoftcap(player.fortune.energy).max(1).plus(1).pow(1.1).times(upperLimGiftGainMult()).times(tmp.fortune.giftGainMult)
 	tmp.fortune.furthestToExp = getFortuneFurthestEff();
 	tmp.fortune.exp = getFortuneExp();
+}
+
+function updateConstellationsTemp() {
+	if (!tmp.const) tmp.const = {};
+	tmp.const.starsUnl = Object.keys(player.constellations.stars).length;
+	let arr = STAR_UNLOCKS.filter(x => player.constellations.darkness.gte(x));
+	tmp.const.starsCanUnl = player.unlocks.includes("Constellations")?arr.length:0;
+	tmp.const.exp = getStarExp();
+	tmp.const.darkEff = getDarknessEff();
+	tmp.const.darkEff2 = getDarknessEff2();
+	tmp.starEff = player.mega.upgrades.includes(25)?getStarEff():new Decimal(0);
+}
+
+function updateUltraTemp() {
+	if (!tmp.ultra) tmp.ultra = {};
+	tmp.ultra.can = canUltraReset()
+	tmp.ultra.timesEff = getUltraTimesEff()
+	tmp.ultra.exp = getUltraExp()
+	tmp.ultra.enEff = getUltraEnergyEff()
+	tmp.ultra.enEff2 = getUltraEnergyEff2()
+	tmp.ultra.gain = getUltraGain();
 }

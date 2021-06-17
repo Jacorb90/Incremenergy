@@ -12,6 +12,7 @@
 	<script src="js/game.js"></script>
 	<script src="js/v.js"></script>
 
+	<script src="js/goals.js"></script>
 	<script src="js/energy.js"></script>
 	<script src="js/super.js"></script>
 	<script src="js/auto.js"></script>
@@ -19,6 +20,8 @@
 	<script src="js/skills.js"></script>
 	<script src="js/hyper.js"></script>
 	<script src="js/fortune.js"></script>
+	<script src="js/constellations.js"></script>
+	<script src="js/ultra.js"></script>
 </head>
 <body onload="loadGame()">
 	<div id="app">
@@ -34,17 +37,25 @@
 		<div v-if="tab=='Options'">
 			<table>
 				<tr>
-					<td><button class="unlocked options" onclick="toggleAutosave()">Autosave: {{player.autosave?"ON":"OFF"}}</button></td>
+					<td><button class="unlocked options" onclick="toggleAutosave()">Autosave: {{player.autosave?"ON":"OFF"}}</button><button class="unlocked options" onclick="player.offTime = !player.offTime">Offline Time: {{player.offTime?"ON":"OFF"}}</button></td>
 					<td><button class="small unlocked options" onclick="save()">Save</button><br>
 					<button class="small unlocked options" onclick="importSave()">Import</button></td>
 					<td><button class="small unlocked" style="background-color: #820000;" onclick="hardReset()">HARD RESET</button><br>
 					<button class="small unlocked options" onclick="exportSave()">Export</button></td>
+					<td><button class="unlocked options" style="background-color: #1de2be;" onclick="player.hideComplGoals = !player.hideComplGoals;">Completed Goals: {{player.hideComplGoals?"HIDDEN":"SHOWN"}}</button></td>
 				</tr>
-			</table>
-		</div>
-		<div v-if="tab=='Info'">
+			</table><br><br><br><br><b>Info</b><br><br>
 			The Energy mechanic works like this: You generate 1 Base Energy/sec, then it's raised to the power of the exponent shown.<br><br>
 			<span v-if="player.unlocks.includes('Fortune')">Positive Karma = Higher chance of getting more Gifts. Negative Karma = Higher chance of getting less Gifts.</span>
+		</div>
+		<div v-if="tab=='Goals'">
+			Goals: <b style="font-size: 20px;">{{formatWhole(player.goals.length)}} / {{formatWhole(total_goal_count)}}</b><br><br>
+			<subtab-display :tabname="'Goals'"></subtab-display><br>
+			<table>
+				<tr v-for="(a,c) in goal_data.map">
+					<td v-for="(a2,x) in goal_data.map[c]"><div v-bind:class="{goalDiv: true}" v-bind:style="{'background-color': (hasGoal(x)?'#1de2be':'white')}" v-if="(hasGoal(x)?(!player.hideComplGoals):goal_data[x].unl())&&subtabs.Goals==goal_data[x].tab"><h5>{{goal_data[x].title}}</h5>Req: {{goal_data[x].reqDisplay}}<br><br>Progress: {{hasGoal(x)?"COMPLETE":(format(Decimal.mul(goal_data[x].progress(), 100))+"%")}}</div></td>
+				</tr>
+			</table>
 		</div>
 		<div v-if="tab=='Auto'">
 			You have <span class="slightlyBigText" style="color: #e6dc8a;">{{format(player.sup.energy)}}</span> Super-Energy<sup>{{format(tmp.sup.exp)}}</sup><br><br>
@@ -80,7 +91,9 @@
 				<button v-bind:class="{locked: !tmp.mega.can, unlocked: tmp.mega.can, mega: tmp.mega.can, reallyBig: true}" onclick="megaReset()">Sacrifice all previous progress to build a Mega Factory.<span v-if="!tmp.mega.can"><br><br>Req: Energy exponent of {{formatWhole(tmp.mega.req)}}</span></button><br><br>
 				<table>
 					<tr v-for="(a,c) in megaUpgs.cols">
-						<td v-for="x in megaUpgs.cols[c]"><button v-if="megaUpgs[x].unl()||player.mega.upgrades.includes(x)" v-on:click="buyMegaUpg(x)" v-bind:class="{locked: (player.mega.energy.lt(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), unlocked: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), mega: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), bought: player.mega.upgrades.includes(x), big: true, smalltxt: true}"><h4>{{megaUpgs[x].title}}</h4>{{megaUpgs[x].display}}<br><span v-if="megaUpgs[x].displayEff">Currently: <b><span v-html="megaUpgs[x].displayEff()"></span></b><br></span><br><span v-if="!player.mega.upgrades.includes(x)">Cost: {{format(megaUpgs[x].cost)}} Mega-Energy</span></button></td>
+						<td v-for="x in megaUpgs.cols[c]">
+							<button v-if="megaUpgs[x].unl()||player.mega.upgrades.includes(x)" v-on:click="buyMegaUpg(x)" v-bind:class="{locked: (player.mega.energy.lt(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), unlocked: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), mega: (player.mega.energy.gte(megaUpgs[x].cost)&&!player.mega.upgrades.includes(x)), bought: player.mega.upgrades.includes(x), big: true, smalltxt: true}"><h4>{{megaUpgs[x].title}}</h4><span v-html="megaUpgs[x].display"></span><br><span v-if="megaUpgs[x].displayEff">Currently: <b><span v-html="megaUpgs[x].displayEff()"></span></b><br></span><br><span v-if="!player.mega.upgrades.includes(x)">Cost: {{format(megaUpgs[x].cost)}} Mega-Energy</span><input id="megaUpg27Active" v-if="x==27 && player.mega.upgrades.includes(27)" type="checkbox" v-model="player.mega.upg27active" @change="hyperReset(true)"></input></button>
+						</td>
 					</tr>
 				</table>
 			</div><div v-if="subtabs.Mega=='Skills'">
@@ -109,7 +122,7 @@
 					<button v-bind:class="{locked: tmp.hyper.totalUpgs.lt(1), unlocked: tmp.hyper.totalUpgs.gte(1), hyper: tmp.hyper.totalUpgs.gte(1)}" onclick="resetHyperUpgs()">Reset Hyper Upgrades</button><br><br>
 					<table>
 						<tr v-for="(a,c) in hyperUpgs.cols">
-							<td v-for="x in hyperUpgs.cols[c]"><button v-if="((x>1)?((tmp.hyper.upgs[x-1].lvl.gt(0))&&player.unlocks.includes('Auto')):true)&&hyperUpgs[x].unl()" v-on:click="buyHyperUpg(x)" v-bind:class="{locked: player.hyper.energy.lt(tmp.hyper.upgs[x].cost), unlocked: player.hyper.energy.gte(tmp.hyper.upgs[x].cost), hyper: player.hyper.energy.gt(tmp.hyper.upgs[x].cost), big: true, smalltxt: true, hyperBox: true}"><h4>{{hyperUpgs[x].title}}</h4>{{hyperUpgs[x].display()}}<br>Level: {{formatWhole(player.hyper.upgs[x])}} <span v-if="tmp.hyper.upgs[x].extra.gt(0)"> + {{format(tmp.hyper.upgs[x].extra)}}</span><br>Currently: <b>{{hyperUpgs[x].displayEff()}}</b><br><br>Cost: {{format(tmp.hyper.upgs[x].cost)}} Hyper-Energy</button></td>
+							<td v-for="x in hyperUpgs.cols[c]"><button v-if="((x>1&&x<7)?((tmp.hyper.upgs[x-1].lvl.gt(0))&&player.unlocks.includes('Auto')):true)&&hyperUpgs[x].unl()" v-on:click="buyHyperUpg(x)" v-bind:class="{locked: player.hyper.energy.lt(tmp.hyper.upgs[x].cost), unlocked: player.hyper.energy.gte(tmp.hyper.upgs[x].cost), hyper: player.hyper.energy.gt(tmp.hyper.upgs[x].cost), big: true, smalltxt: true, hyperBox: true}"><h4>{{hyperUpgs[x].title}}</h4>{{hyperUpgs[x].display()}}<br>Level: {{formatWhole(player.hyper.upgs[x])}} <span v-if="tmp.hyper.upgs[x].extra.gt(0)"> + {{format(tmp.hyper.upgs[x].extra)}}</span><br>Currently: <b>{{hyperUpgs[x].displayEff()}}</b><br><br>Cost: {{format(tmp.hyper.upgs[x].cost)}} Hyper-Energy</button></td>
 						</tr>
 					</table><br><br>
 				</span>
@@ -117,9 +130,107 @@
 				You have <span class="slightlyBigText" style="color: #c3b4d6;">{{format(player.fortune.energy)}}</span> Fortune Energy<sup>{{format(tmp.fortune.exp)}}</sup><br>
 				Your best Energy exponent in an Unfortunate run is <b>{{format(player.fortune.furthest)}}</b>, which adds <b>{{format(tmp.fortune.furthestToExp)}}</b> to the Fortune Energy exponent.<br><br>
 				<button v-bind:class="{unlocked: true, fortune: true, reallyBig: true, hyperBox: true}" onclick="startUnfortuneRun()">{{(player.fortune.active)?"Exit this Unfortunate run.":"Start an Unfortunate run, which square roots all Energy exponents."}}</button><br><br>
-				You have <b>{{formatWhole(player.fortune.gifts)}}</b> Gifts, which multiply the Fortune Energy exponent by <b>{{format(tmp.fortune.eff1)}}</b> and reduce the Mega Energy effect softcap's power by <b>{{format(tmp.fortune.eff2.times(100))}}%</b>.<br><br><b>Karma: {{format(player.fortune.karma.plus(tmp.fortune.addKarma).times(100))}}%</b><br>
+				You have <b>{{formatWhole(player.fortune.gifts)}}</b> Gifts, which multiply the Fortune Energy exponent by <b>{{format(tmp.fortune.eff1)}}</b> and reduce the Mega Energy effect softcap's power by <b>{{format(tmp.fortune.eff2.times(100))}}%</b>.<br><br><b v-if="(!tmp.auto.gifts.active) || tmp.fortune.addKarma.eq(0)">Karma: {{format(player.fortune.karma.plus(tmp.fortune.addKarma).times(100))}}%</b><b v-if="tmp.auto.gifts.active && !tmp.fortune.addKarma.eq(0)">Karma Range: {{format(tmp.fortune.addKarma.sub(1).times(100))}}% to {{format(tmp.fortune.addKarma.plus(1).times(100))}}%</b><br>
 				<button v-bind:class="{locked: player.fortune.energy.lt(fortune_req), unlocked: player.fortune.energy.gte(fortune_req), fortune: player.fortune.energy.gte(fortune_req), big: true, hyperBox: true}" onclick="giftRNG()">{{(player.mega.upgrades.includes(19))?"Destroy 1 Fortune Energy":"Destroy all your Fortune Energy"}} to get{{(player.fortune.energy.gte(fortune_req)?(" "+formatWhole(tmp.fortune.minGain)+"-"+formatWhole(tmp.fortune.maxGain)):"")}} gifts!<span v-if="player.fortune.energy.lt(fortune_req)"><br>Req: {{formatWhole(fortune_req)}} Fortune Energy.</span></button>
+			</div><div v-if="subtabs.Hyper=='Constellations'">
+				You have <span class="slightlyBigText" style="color: #f3e77f; text-shadow: 0px 0px 7px #f3e77f;">{{format(player.constellations.energy)}}</span> Star Energy<sup>{{format(tmp.const.exp)}}</sup><span v-html="player.mega.upgrades.includes(25)?(&quot;, which reduces the second Hyper-Energy effect's softcap by <span class='slightlyBigText' style='color: #f3e77f; text-shadow: 0px 0px 7px #f3e77f;'>&quot;+format(tmp.starEff.times(100))+&quot;%</span>&quot;):&quot;&quot;"></span><br>
+				You have <span class="slightlyBigText" style="color: rgb(209, 0, 209);">{{format(player.constellations.darkness)}}</span> Darkness, which multiplies Atom & Gift gain by <span class="slightlyBigText" style="color: rgb(209, 0, 209);">{{format(tmp.const.darkEff)}}</span> & multiplies the Unfortunate run effect by <span class="slightlyBigText" style="color: rgb(209, 0, 209);">{{format(tmp.const.darkEff2)}}</span>
+				<br><br>
+				<span v-if="STAR_UNLOCKS[tmp.const.starsCanUnl]!==undefined">Next Star at {{formatWhole(STAR_UNLOCKS[tmp.const.starsCanUnl])}} Darkness<br></span>
+				<button v-if="tmp.const.starsCanUnl>=2" class="unlocked mini" onclick="syncNeutronStarCooldowns()">Sync Neutron Star Cooldowns</button><br><br>
+				<div>
+					<table> 
+						<tr>
+							<td v-if="tmp.const.starsCanUnl>=10"><button v-bind:class="{star: true, starfocus: player.constellations.selected==10, redGiant: player.constellations.stars[10].type==1, neutronStar: player.constellations.stars[10].type==2, blackHole: player.constellations.stars[10].type==3}" onclick="player.constellations.selected = (player.constellations.selected==10)?0:10;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=1"><button v-bind:class="{star: true, starfocus: player.constellations.selected==1, redGiant: player.constellations.stars[1].type==1, neutronStar: player.constellations.stars[1].type==2, blackHole: player.constellations.stars[1].type==3}" onclick="player.constellations.selected = (player.constellations.selected==1)?0:1;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=12"><button v-bind:class="{star: true, starfocus: player.constellations.selected==12, redGiant: player.constellations.stars[12].type==1, neutronStar: player.constellations.stars[12].type==2, blackHole: player.constellations.stars[12].type==3}" onclick="player.constellations.selected = (player.constellations.selected==12)?0:12;"></button></td>
+						</tr>
+						<tr>
+							<td v-if="tmp.const.starsCanUnl>=14"><button v-bind:class="{star: true, starfocus: player.constellations.selected==14, redGiant: player.constellations.stars[14].type==1, neutronStar: player.constellations.stars[14].type==2, blackHole: player.constellations.stars[14].type==3}" onclick="player.constellations.selected = (player.constellations.selected==14)?0:14;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=2"><button v-bind:class="{star: true, starfocus: player.constellations.selected==2, redGiant: player.constellations.stars[2].type==1, neutronStar: player.constellations.stars[2].type==2, blackHole: player.constellations.stars[2].type==3}" onclick="player.constellations.selected = (player.constellations.selected==2)?0:2;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=3"><button v-bind:class="{star: true, starfocus: player.constellations.selected==3, redGiant: player.constellations.stars[3].type==1, neutronStar: player.constellations.stars[3].type==2, blackHole: player.constellations.stars[3].type==3}" onclick="player.constellations.selected = (player.constellations.selected==3)?0:3;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=16"><button v-bind:class="{star: true, starfocus: player.constellations.selected==16, redGiant: player.constellations.stars[16].type==1, neutronStar: player.constellations.stars[16].type==2, blackHole: player.constellations.stars[16].type==3}" onclick="player.constellations.selected = (player.constellations.selected==16)?0:16;"></button></td>
+						</tr>
+						<tr>
+							<td v-if="tmp.const.starsCanUnl>=18"><button v-bind:class="{star: true, starfocus: player.constellations.selected==18, redGiant: player.constellations.stars[18].type==1, neutronStar: player.constellations.stars[18].type==2, blackHole: player.constellations.stars[18].type==3}" onclick="player.constellations.selected = (player.constellations.selected==18)?0:18;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=4"><button v-bind:class="{star: true, starfocus: player.constellations.selected==4, redGiant: player.constellations.stars[4].type==1, neutronStar: player.constellations.stars[4].type==2, blackHole: player.constellations.stars[4].type==3}" onclick="player.constellations.selected = (player.constellations.selected==4)?0:4;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=5"><button v-bind:class="{star: true, starfocus: player.constellations.selected==5, redGiant: player.constellations.stars[5].type==1, neutronStar: player.constellations.stars[5].type==2, blackHole: player.constellations.stars[5].type==3}" onclick="player.constellations.selected = (player.constellations.selected==5)?0:5;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=6"><button v-bind:class="{star: true, starfocus: player.constellations.selected==6, redGiant: player.constellations.stars[6].type==1, neutronStar: player.constellations.stars[6].type==2, blackHole: player.constellations.stars[6].type==3}" onclick="player.constellations.selected = (player.constellations.selected==6)?0:6;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=19"><button v-bind:class="{star: true, starfocus: player.constellations.selected==19, redGiant: player.constellations.stars[19].type==1, neutronStar: player.constellations.stars[19].type==2, blackHole: player.constellations.stars[19].type==3}" onclick="player.constellations.selected = (player.constellations.selected==19)?0:19;"></button></td>
+						</tr>
+						<tr>
+							<td v-if="tmp.const.starsCanUnl>=17"><button v-bind:class="{star: true, starfocus: player.constellations.selected==17, redGiant: player.constellations.stars[17].type==1, neutronStar: player.constellations.stars[17].type==2, blackHole: player.constellations.stars[17].type==3}" onclick="player.constellations.selected = (player.constellations.selected==17)?0:17;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=7"><button v-bind:class="{star: true, starfocus: player.constellations.selected==7, redGiant: player.constellations.stars[7].type==1, neutronStar: player.constellations.stars[7].type==2, blackHole: player.constellations.stars[7].type==3}" onclick="player.constellations.selected = (player.constellations.selected==7)?0:7;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=8"><button v-bind:class="{star: true, starfocus: player.constellations.selected==8, redGiant: player.constellations.stars[8].type==1, neutronStar: player.constellations.stars[8].type==2, blackHole: player.constellations.stars[8].type==3}" onclick="player.constellations.selected = (player.constellations.selected==8)?0:8;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=15"><button v-bind:class="{star: true, starfocus: player.constellations.selected==15, redGiant: player.constellations.stars[15].type==1, neutronStar: player.constellations.stars[15].type==2, blackHole: player.constellations.stars[15].type==3}" onclick="player.constellations.selected = (player.constellations.selected==15)?0:15;"></button></td>
+						</tr>
+						<tr>
+							<td v-if="tmp.const.starsCanUnl>=13"><button v-bind:class="{star: true, starfocus: player.constellations.selected==13, redGiant: player.constellations.stars[13].type==1, neutronStar: player.constellations.stars[13].type==2, blackHole: player.constellations.stars[13].type==3}" onclick="player.constellations.selected = (player.constellations.selected==13)?0:13;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=9"><button v-bind:class="{star: true, starfocus: player.constellations.selected==9, redGiant: player.constellations.stars[9].type==1, neutronStar: player.constellations.stars[9].type==2, blackHole: player.constellations.stars[9].type==3}" onclick="player.constellations.selected = (player.constellations.selected==9)?0:9;"></button></td>
+							<td v-if="tmp.const.starsCanUnl>=11"><button v-bind:class="{star: true, starfocus: player.constellations.selected==11, redGiant: player.constellations.stars[11].type==1, neutronStar: player.constellations.stars[11].type==2, blackHole: player.constellations.stars[11].type==3}" onclick="player.constellations.selected = (player.constellations.selected==11)?0:11;"></button></td>
+						</tr>
+					</table>
+				</div><br>
+				<div v-if="player.constellations.selected>0" class="footer">
+					<br><div class="table" style="display: inline-flex;">
+						<div class="tableRow" style="display: inline-flex;">
+							<div><b>Star</b></div>
+							<div style="margin-left: 60px;"><b>Red Giant</b></div>
+							<div style="margin-left: 60px;"><b>Neutron Star</b></div>
+							<div style="margin-left: 60px;"><b>Black Hole</b></div>
+						</div><div class="tableRow" style="display: inline-flex;">
+							<div style="height: 60px;"><button v-bind:class="{star: true, starfocus: player.constellations.stars[player.constellations.selected].type==0}" style="transform: scale(125%);" onclick="player.constellations.stars[player.constellations.selected].type = 0;"></button></div>
+							<div style="height: 60px; margin-left: 65px;"><button v-bind:class="{star: true, redGiant: true, starfocus: player.constellations.stars[player.constellations.selected].type==1}" style="transform: scale(125%);" onclick="player.constellations.stars[player.constellations.selected].type = 1;"></button></div>
+							<div style="height: 60px; margin-left: 120px;"><button v-bind:class="{star: true, neutronStar: true, starfocus: player.constellations.stars[player.constellations.selected].type==2}" style="transform: scale(125%);" onclick="player.constellations.stars[player.constellations.selected].type = 2; if (player.constellations.stars[player.constellations.selected].time==0) player.constellations.stars[player.constellations.selected].time = 20;"></button></div>
+							<div style="height: 60px; margin-left: 130px;"><button v-bind:class="{star: true, blackHole: true, starfocus: player.constellations.stars[player.constellations.selected].type==3}" style="transform: scale(125%);" onclick="player.constellations.stars[player.constellations.selected].type = 3;"></button></div>
+						</div><br><div class="tableRow" style="display: inline-flex; transform: translate(-20px);">
+							<div style="width: 80px;">Does nothing</div>
+							<div style="width: 110px; margin-left: 20px;">Star Energy exponent is increased by {{format(redGiantEff())}}</div>
+							<div style="width: 110px; margin-left: 55px;">Star Energy exponent is increased by {{format(neutronStarEff())}} for {{format(Math.max(player.constellations.stars[player.constellations.selected].time-neutronStarCooldownTime(), 0))}} seconds{{(player.constellations.stars[player.constellations.selected].time>0&&player.constellations.stars[player.constellations.selected].time<=neutronStarCooldownTime())?(" (cooldown: "+format(player.constellations.stars[player.constellations.selected].time)+" seconds)"):""}}</div>
+							<div style="width: 140px; margin-left: 40px;">Star Energy is halved every second, but you gain Darkness from lost Star Energy</div>
+						</div>
+					</div>
+				</div>
 			</div>
+		</div>
+		<div v-if="tab=='Ultra'">
+			You have <span class="slightlyBigText" style="color: #a024f2; text-shadow: 0px 0px 7px #bdb7ff;">{{format(player.ultra.energy)}}</span> Ultra-Energy<sup>{{format(tmp.ultra.exp)}}</sup>, which multiplies the Normal, Super, Mega, & Hyper Energy exponents by <span class="slightlyBigText" style="color: #a024f2; text-shadow: 0px 0px 7px #bdb7ff;">{{format(tmp.ultra.enEff)}}</span>, and adds <span class="slightlyBigText" style="color: #a024f2; text-shadow: 0px 0px 7px #bdb7ff;">{{format(tmp.ultra.enEff2)}}</span> to all previous Energy exponents.<br><br>
+			<span style="font-size: 11px">You have performed {{formatWhole(player.ultra.times)}} Ultra resets, which increases the Ultra-Energy exponent by {{format(tmp.ultra.timesEff)}}</span><br><br>
+			<button v-bind:class="{locked: !tmp.ultra.can, unlocked: tmp.ultra.can, ultra: tmp.ultra.can, reallyBig: true}" onclick="ultraReset()">Reset all previous progress to gain {{formatTime(tmp.ultra.gain)}} worth of Ultra-Energy.<span v-if="!tmp.ultra.can"><br><br>Req: {{formatWhole("1e1000")}} Hyper-Energy</span></button><br><br>
+			<table v-if="player.ultra.times.gte(1)">
+				<tr>
+					<td><button onclick="toggleUltraChoice(1, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(2), selected: ultraChoice(1, 1) }"><b># of Hyper resets multiplies Super resets gained {{ultraChoice(1, 1)?"(SELECTED)":""}}</b><br>Req: 2 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(1, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(2), selected: ultraChoice(1, 2) }"><b>Mega Factory cost scales 75% slower {{ultraChoice(1, 2)?"(SELECTED)":""}}</b><br>Req: 2 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(2)">
+					<td><button onclick="toggleUltraChoice(2, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(10), selected: ultraChoice(2, 1) }"><b>You can gain more than 1s worth of Ultra-Energy on reset {{ultraChoice(2, 1)?"(SELECTED)":""}}</b><br>Req: 10 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(2, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(10), selected: ultraChoice(2, 2) }"><b>Evolved Amoebas also affect the Mega-Energy exponent {{ultraChoice(2, 2)?"(SELECTED)":""}}</b><br>Req: 10 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(10)">
+					<td><button onclick="toggleUltraChoice(3, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(100), selected: ultraChoice(3, 1) }"><b># of Ultra resets multiplies Hyper resets gained {{ultraChoice(3, 1)?"(SELECTED)":""}}</b><br>Req: 100 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(3, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(100), selected: ultraChoice(3, 2) }"><b>Neutron Star cooldown is reduced by 4s {{ultraChoice(3, 2)?"(SELECTED)":""}}</b><br>Req: 100 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(100)">
+					<td><button onclick="toggleUltraChoice(4, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(500), selected: ultraChoice(4, 1) }"><b>The first Skill's XP gain is multiplied by Star Energy {{ultraChoice(4, 1)?"(SELECTED)":""}}</b><br>Req: 500 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(4, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(500), selected: ultraChoice(4, 2) }"><b>Karma is increased by 25% & Gift RNG is exponential {{ultraChoice(4, 2)?"(SELECTED)":""}}</b><br>Req: 500 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(500)">
+					<td><button onclick="toggleUltraChoice(5, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1500), selected: ultraChoice(5, 1) }"><b>Multiply Super Drives' effect by the Star Energy exponent {{ultraChoice(5, 1)?"(SELECTED)":""}}</b><br>Req: 1,500 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(5, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1500), selected: ultraChoice(5, 2) }"><b>Multiply Skilled Ninja's effect by the Ultra-Energy exponent {{ultraChoice(5, 2)?"(SELECTED)":""}}</b><br>Req: 1,500 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(1500)">
+					<td><button onclick="toggleUltraChoice(6, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1e4), selected: ultraChoice(6, 1) }"><b>Mega Resurgence does not force a Hyper reset when bought, and its effect also adds to the Fortune Energy exponent {{ultraChoice(6, 1)?"(SELECTED)":""}}</b><br>Req: 10,000 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(6, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1e4), selected: ultraChoice(6, 2) }"><b>The first 3 rows of Ultra upgrades are always selected {{ultraChoice(6, 2)?"(SELECTED)":""}}</b><br>Req: 10,000 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(1e4)">
+					<td><button onclick="toggleUltraChoice(7, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(7.5e4), selected: ultraChoice(7, 1) }"><b>Holy Destroyers are 900% stronger {{ultraChoice(7, 1)?"(SELECTED)":""}}</b><br>Req: 75,000 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(7, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(7.5e4), selected: ultraChoice(7, 2) }"><b>Add 0.5 to the Ultra-Energy exponent {{ultraChoice(7, 2)?"(SELECTED)":""}}</b><br>Req: 75,000 Ultra-Energy</button></td>
+				</tr>
+				<tr v-if="player.ultra.energy.gte(7.5e4)">
+					<td><button onclick="toggleUltraChoice(8, 1)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1e6), selected: ultraChoice(8, 1) }"><b>All Energy Upgrades are 59% stronger {{ultraChoice(8, 1)?"(SELECTED)":""}}</b><br>Req: 1,000,000 Ultra-Energy</button></td>
+					<td><button onclick="toggleUltraChoice(8, 2)" v-bind:class="{ ultraChoice: true, locked: player.ultra.energy.lt(1e6), selected: ultraChoice(8, 2) }"><b>Rows 4 & 5 of Ultra upgrades are always selected {{ultraChoice(8, 2)?"(SELECTED)":""}}</b><br>Req: 1,000,000 Ultra-Energy</button></td>
+				</tr>
+			</table>
 		</div>
 	</div>
 </body>

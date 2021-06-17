@@ -132,7 +132,11 @@ var superUpgs = {
 			if (x.lt("1e1500")) return new Decimal(0);
 			return Decimal.pow(10, x.div("1e1400").log(1e100).log10().sqrt()).floor()
 		},
-		gainPer() { return player.hyper.splitAtoms.plus(1).log10().times(5) },
+		gainPer() { 
+			let per = player.hyper.splitAtoms.plus(1).log10().times(5);
+			if (per.gte(1e9)) per = Decimal.pow(1e9, per.log(1e9).sqrt());
+			return per; 
+		},
 		eff(x) { return tmp.sup.upgs[7].gainPer.times(x) },
 		power() { return new Decimal(1) },
 		displayEff() { return "+"+format(tmp.sup.upgs[7].eff) },
@@ -166,7 +170,11 @@ var superUpgs = {
 			if (x.lt("1e9000")) return new Decimal(0);
 			return Decimal.pow(10, x.div("1e8750").log(1e250).log10().cbrt()).floor()
 		},
-		gainPer() { return player.sup.energy.plus(1).log10().plus(1).log10().plus(1).root(4) },
+		gainPer() { 
+			let per = player.sup.energy.plus(1).log10().plus(1).log10().plus(1).root(4);
+			if (ultraChoice(5, 2) && tmp.ultra) per = per.times(tmp.ultra.exp.plus(1));
+			return per;
+		},
 		eff(x) { return Decimal.pow(tmp.sup.upgs[9].gainPer, x) },
 		power() { return new Decimal(1) },
 		displayEff() { return format(tmp.sup.upgs[9].eff)+"x" },
@@ -212,6 +220,7 @@ function addToSupEnExp() {
 	if (player.mega.upgrades.includes(11) && tmp.mega) add = add.plus(tmp.mega.upgs[11].eff.sup)
 	if (tmp.sup.upgs) add = add.plus(tmp.sup.upgs[7].eff)
 	if (tmp.hyper) add = add.plus(tmp.hyper.enEff2)
+	if (tmp.ultra) add = add.plus(tmp.ultra.enEff2)
 	return add;
 }
 
@@ -219,6 +228,8 @@ function multiplySupEnExp() {
 	let mult = new Decimal(1);
 	if (player.mega.upgrades.includes(5) && tmp.mega) mult = mult.times(tmp.mega.upgs[5].eff);
 	if (tmp.hyper) mult = mult.times(tmp.hyper.upgs[1].eff.plus(1))
+	if (player.mega.upgrades.includes(26)) mult = mult.times(1.2);
+	if (tmp.ultra) mult = mult.times(tmp.ultra.enEff);
 	return mult;
 }
 
@@ -241,7 +252,9 @@ function getSuperExp(x=player.sup.totalExpInput) {
 }
 
 function getSuperResetStatGain() {
-	return tmp.sup.upgs[5].eff.plus(1)
+	let gain = tmp.sup.upgs[5].eff.plus(1)
+	if (ultraChoice(1, 1)) gain = gain.times(player.hyper.times.plus(1));
+	return gain;
 }
 
 function superReset(force=false, updates=2) {
@@ -271,6 +284,7 @@ function getSuperEnergyEff() {
 			eff = val1.pow(softcapPower).times(val2.pow(Decimal.sub(1, softcapPower)));
 		} else eff = Decimal.pow(3, eff.log(3).sqrt()).min(eff.times(3).sqrt())
 	}
+	if (eff.gte(5e4)) eff = Decimal.pow(5e4, eff.log(5e4).cbrt()).min(eff.times(2.5e9).cbrt());
 	if (tmp.sup.upgs) eff = eff.plus(tmp.sup.upgs[1].eff);
 	return eff;
 }

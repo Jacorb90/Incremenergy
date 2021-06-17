@@ -2,8 +2,12 @@ function getStartPlayer() {
 	let p = {
 		unlocks: [],
 		energy: new Decimal(1),
+		lastTime: new Date().getTime(),
+		offTime: true,
 		autosave: true,
+		hideComplGoals: false,
 		upgs: {},
+		goals: [],
 		sup: {
 			totalExpInput: new Decimal(0),
 			energy: new Decimal(1),
@@ -18,6 +22,7 @@ function getStartPlayer() {
 			energy: new Decimal(1),
 			upgrades: [],
 			xp: {},
+			upg27active: true,
 		},
 		hyper: {
 			splitAtoms: new Decimal(0),
@@ -33,6 +38,17 @@ function getStartPlayer() {
 			gifts: new Decimal(0),
 			karma: new Decimal(0),
 		},
+		constellations: {
+			selected: 0,
+			stars: {},
+			energy: new Decimal(0),
+			darkness: new Decimal(0),
+		},
+		ultra: {
+			times: new Decimal(0),
+			energy: new Decimal(1),
+			choices: {},
+		},
 	};
 	return p;
 }
@@ -41,6 +57,8 @@ function fixPlayer() {
 	let start = getStartPlayer();
 	fixPlayerObj(player, start);
 	
+	if (!player.offTime) player.lastTime = new Date().getTime();
+
 	transformPlayerToDecimal();
 }
 
@@ -71,4 +89,6 @@ function transformPlayerToDecimal() {
 	player.fortune.energy = new Decimal(player.fortune.energy);
 	player.fortune.gifts = new Decimal(player.fortune.gifts);
 	player.fortune.karma = new Decimal(player.fortune.karma);
+	player.constellations.energy = new Decimal(player.constellations.energy);
+	player.constellations.darkness = new Decimal(player.constellations.darkness);
 }

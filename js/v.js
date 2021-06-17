@@ -24,6 +24,7 @@ function loadVue() {
 			tmp,
 			format,
 			formatWhole,
+			formatTime,
 			getUnlockText,
 			getUnlockProgress,
 			tab,
@@ -43,9 +44,19 @@ function loadVue() {
 			skill_data,
 			upgradeSkill,
 			nextXP,
+			hyperReset,
 			hyperUpgs,
 			buyHyperUpg,
 			fortune_req,
+			STAR_UNLOCKS,
+			neutronStarCooldownTime,
+			redGiantEff,
+			neutronStarEff,
+			goal_data,
+			hasGoal,
+			total_goal_count,
+			Decimal,
+			ultraChoice,
         }
 	})
 }

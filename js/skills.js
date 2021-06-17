@@ -3,7 +3,7 @@ var skill_data = {
 		symbol: "&#9876;",
 		basedOn: "Energy",
 		base() { return player.energy.plus(1).log10().div(1e3).sqrt() },
-		levels(xp) { return Decimal.pow(2, xp.times(tmp.skills.divCosts).div(1.5).plus(1).log10().plus(1).log2().root(1.1)).pow(1.1).sub(1).floor() },
+		levels(xp) { return Decimal.pow(2, xp.times(tmp.skills.divCosts).div(1.5).plus(1).log10().plus(1).log2().root(1.1)).pow(1.1).sub(1) },
 		req(lvl) { return Decimal.pow(10, Decimal.pow(2, lvl.plus(1).root(1.1).log2().pow(1.1)).sub(1)).sub(1).times(1.5).div(tmp.skills.divCosts).ceil() },
 		desc() { return "The 2nd Energy Upgrade's cost increases "+format(tmp.skills[1].eff.times(100))+"% slower" },
 		eff(pow) { return Decimal.sub(1, Decimal.div(1, tmp.skills[1].lvl.times(pow).plus(1).sqrt())) },
@@ -12,7 +12,7 @@ var skill_data = {
 		symbol: "&#10683;",
 		basedOn: "Super-Energy",
 		base() { return Decimal.pow(10, player.sup.energy.plus(1).log10().sqrt().div(15)) },
-		levels(xp) { return Decimal.pow(2, xp.times(tmp.skills.divCosts).div(1.5).plus(1).log10().plus(1).log2().root(1.2)).pow(1.1).sub(1).floor() },
+		levels(xp) { return Decimal.pow(2, xp.times(tmp.skills.divCosts).div(1.5).plus(1).log10().plus(1).log2().root(1.2)).pow(1.1).sub(1) },
 		req(lvl) { return Decimal.pow(10, Decimal.pow(2, lvl.plus(1).root(1.1).log2().pow(1.2)).sub(1)).sub(1).times(1.5).div(tmp.skills.divCosts).ceil() },
 		desc() { return "The Super-Energy effect softcap is "+format(tmp.skills[2].eff.times(100))+"% weaker" },
 		eff(pow) { return Decimal.sub(1, Decimal.div(1, tmp.skills[2].lvl.times(pow).plus(1).sqrt())) },
@@ -41,6 +41,7 @@ function divSkillCosts() {
 function getXPGainMult(x) {
 	let mult = tmp.sup.upgs[9].eff;
 	if (player.mega.upgrades.includes(8) && x<3) mult = mult.times(tmp.mega.upgs[8].eff);
+	if (ultraChoice(4, 1)) mult = mult.times(player.constellations.energy.plus(1));
 	return mult;
 }
 
@@ -77,4 +78,10 @@ function getGlobalSkillPower() {
 	let pow = new Decimal(1);
 	if (player.mega.upgrades.includes(20)) pow = pow.times(tmp.mega.upgs[20].eff)
 	return pow;
+}
+
+function skillReqScaling() {
+	let s = new Decimal(1);
+	if (player.mega.upgrades.includes(29)) s = s.div(3);
+	return s;
 }

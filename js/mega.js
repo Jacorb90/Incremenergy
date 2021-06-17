@@ -1,10 +1,11 @@
 var megaUpgs = {
-	upgs: {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21, 22: 22, 23: 23, 24: 24},
+	upgs: {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21, 22: 22, 23: 23, 24: 24, 25: 25, 26: 26, 27: 27, 28: 28, 29: 29, 30: 30},
 	cols: {
 		1: {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
 		2: {7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12},
 		3: {13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18},
 		4: {19: 19, 20: 20, 21: 21, 22: 22, 23: 23, 24: 24},
+		5: {25: 25, 26: 26, 27: 27, 28: 28, 29: 29, 30: 30},
 	},
 	1: {
 		title: "Mega Evolution",
@@ -86,14 +87,14 @@ var megaUpgs = {
 	},
 	11: {
 		title: "Experienced Ancient",
-		display: "Skill XP adds to the Energy, Super-Energy, & Mega-Energy exponents.",
+		display: "<div style='font-size: 10px; display: inline-block;'>Skill XP adds to the Energy, Super-Energy, & Mega-Energy exponents.</div>",
 		cost: new Decimal(1e80),
 		eff() { return {
 			normal: new Decimal(player.mega.xp[1]||0).plus(1).log10().plus(1).log10().plus(1).pow(20).sub(1),
 			sup: new Decimal(player.mega.xp[2]||0).plus(1).log10().plus(1).log10().plus(1).pow(10).sub(1),
 			mega: new Decimal(player.mega.xp[3]||0).plus(1).log10().plus(1).log10().plus(1).pow(3).sub(1),
 		}},
-		displayEff() { return "<span style='font-size: 7px;'>Energy: +"+format(tmp.mega.upgs[11].eff.normal)+"<br>Super-Energy: +"+format(tmp.mega.upgs[11].eff.sup)+"<br>Mega-Energy: +"+format(tmp.mega.upgs[11].eff.mega)+"</span>" },
+		displayEff() { return "<div style='font-size: 7px;'>Energy: +"+format(tmp.mega.upgs[11].eff.normal)+"<br>Super-Energy: +"+format(tmp.mega.upgs[11].eff.sup)+"<br>Mega-Energy: +"+format(tmp.mega.upgs[11].eff.mega)+"</div>" },
 		unl() { return player.mega.factories.gte(17)||player.unlocks.includes("Hyper") },
 	},
 	12: {
@@ -137,7 +138,11 @@ var megaUpgs = {
 		title: "Manufactured Tellers",
 		display: "Split Atoms add to the Organic Teller, Mega Organic Teller, and Hyper Plant effects.",
 		cost: new Decimal("1e375"),
-		eff() { return player.hyper.splitAtoms.plus(1).log10().times(6) },
+		eff() { 
+			let eff = player.hyper.splitAtoms.plus(1).log10().times(6);
+			if (eff.gte(4e4)) eff = Decimal.pow(4e4, eff.log(4e4).cbrt());
+			return eff;
+		},
 		displayEff() { return "+"+format(tmp.mega.upgs[17].eff) },
 		unl() { return player.hyper.times.gt(0)&&player.mega.factories.gte(70) },
 	},
@@ -196,12 +201,53 @@ var megaUpgs = {
 		displayEff() { return "<span style='font-size: 8px;'>Hyper: +"+format(tmp.mega.upgs[24].eff.hyper)+"<br>Karma: +"+format(tmp.mega.upgs[24].eff.karma.times(100))+"%</span>" },
 		unl() { return player.unlocks.includes("Fortune")&&player.mega.factories.gte(95) },
 	},
-}
+	25: {
+		title: "Star Power",
+		display: "Star Energy has its own effect.",
+		cost: new Decimal("1e1125"),
+		unl() { return player.unlocks.includes("Constellations") },
+	},
+	26: {
+		title: "Net Intensity",
+		display: "Energy, Super-Energy, Mega-Energy, & Hyper-Energy exponents are increased by 20%.",
+		cost: new Decimal("4.2e1337"),
+		unl() { return player.unlocks.includes("Constellations")&&player.mega.factories.gte(100) },
+	},
+	27: {
+		title: "Mega Resurgence",
+		display: "<div style='font-size: 8px; display: inline-block;'>Mega Upgrades each add 6 to the Mega-Energy exponent, but Mega Upgrade rows 3 & 4 will always reset on Hyper reset (buying/toggling this forces a Hyper reset).</div>",
+		cost: new Decimal("1e1600"),
+		eff() { return player.mega.upg27active?(player.mega.upgrades.length*6):0 },
+		displayEff() { return "+"+formatWhole(tmp.mega.upgs[27].eff) },
+		unl() { return player.unlocks.includes("Constellations")&&player.mega.factories.gte(101) },
+	},
+	28: {
+		title: "Hypertube Acceleration",
+		display: "# of Hyper resets multiply Atom gain.",
+		cost: new Decimal("1e2000"),
+		unl() { return player.unlocks.includes("Constellations")&&player.mega.factories.gte(102) },
+	},
+	29: {
+		title: "Supernova",
+		display: "Neutron Star cooldown is reduced by 10s, and triple Skill levels gained.",
+		cost: new Decimal("2.22e2222"),
+		unl() { return player.unlocks.includes("Constellations")&&player.mega.factories.gte(104) },
+	},
+	30: {
+		title: "Hypernova",
+		display: "<div style='font-size: 9px; display: inline-block;'>Multiply Red Giant, Neutron Star, & Darkness effects based on Energy exponent, & unlock 3 new Hyper Upgrades.</div>",
+		cost: new Decimal("1e2650"),
+		eff() { return tmp.en.exp.plus(1).log10().div(20).plus(1).sqrt() },
+		displayEff() { return format(tmp.mega.upgs[30].eff)+"x" },
+		unl() { return player.unlocks.includes("Constellations")&&player.mega.factories.gte(108) },
+	},
+} 
 
 function getMegaFactoryEff() {
 	let f = player.mega.factories;
 	let eff = f;
 	if (tmp.skills) eff = eff.times(tmp.skills[3].eff.plus(1))
+	if (player.ultra.energy.gte(1500) && tmp.hyper) eff = eff.times(tmp.hyper.upgs[8].eff.plus(1));
 	return eff;
 }
 
@@ -212,12 +258,19 @@ function getMegaExp() {
 	if (player.mega.upgrades.includes(11) && tmp.mega.upgs) exp = exp.plus(tmp.mega.upgs[11].eff.mega)
 	if (tmp.hyper) exp = exp.plus(tmp.hyper.enEff2)
 	if (player.mega.upgrades.includes(22) && tmp.mega.upgs) exp = exp.plus(tmp.mega.upgs[22].eff.times(25))
+	if (player.mega.upgrades.includes(27) && player.mega.upg27active && tmp.mega.upgs) exp = exp.plus(tmp.mega.upgs[27].eff)
+	if (tmp.ultra) exp = exp.plus(tmp.ultra.enEff2)
+
+	if (player.mega.upgrades.includes(26)) exp = exp.times(1.2);
+	if (ultraChoice(2, 2) && player.ultra.times.gt(0) && tmp.hyper) exp = exp.times(tmp.hyper.upgs[7].eff.plus(1));
 	return fortuneNerf(exp);
 }
 
 function getMegaEnergyEff() {
 	let eff = player.mega.energy.max(1).log10().sqrt();
 	if (player.mega.upgrades.includes(4)) eff = player.mega.energy.max(1).log10().times(2).pow(.8);
+	if (player.mega.upgrades.includes(30) && tmp.hyper) eff = eff.times(tmp.hyper.upgs[4].eff.plus(1));
+
 	if (eff.gte(100)) {
 		if (player.unlocks.includes("Fortune")) {
 			let power = Decimal.sub(1, tmp.fortune?tmp.fortune.eff2:1)
@@ -233,8 +286,14 @@ function getMegaReqSub() {
 	return sub;
 }
 
+function getMegaReqScaling() {
+	let s = 1;
+	if (ultraChoice(1, 2)) s -= 0.75;
+	return s;
+}
+
 function getMegaReq() {
-	let f = player.mega.factories;
+	let f = player.mega.factories.times(getMegaReqScaling());
 	if (f.gte(20)) f = Decimal.pow(1.05, f.sub(18)).times(19)
 	if (f.gte(5)) f = Decimal.pow(5, f.log(5).pow(1.1))
 	if (f.gte(2)) f = f.times(Math.pow(2, 3))
@@ -246,7 +305,7 @@ function getMegaTarget() {
 	if (t.gte(2)) t = t.div(Math.pow(2, 3))
 	if (t.gte(5)) t = Decimal.pow(5, t.log(5).root(1.1))
 	if (t.gte(20)) t = t.div(19).log(1.05).add(18)
-	return t.plus(1).floor();
+	return t.div(getMegaReqScaling()).plus(1).floor();
 }
 
 function canMegaReset() {
@@ -285,4 +344,6 @@ function buyMegaUpg(x) {
 	if (player.mega.energy.lt(megaUpgs[x].cost)) return;
 	player.mega.energy = player.mega.energy.sub(megaUpgs[x].cost)
 	player.mega.upgrades.push(x)
+	if (x==27 && !ultraChoice(6, 1)) hyperReset(true);
+	if (x==29) syncNeutronStarCooldowns();
 }
